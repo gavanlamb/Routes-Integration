@@ -1,0 +1,75 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Stack for all integration.haplo.com.au dns records, does not include child zones
+Outputs:
+    ZoneId:
+        Description: Id of the zone
+        Value:
+            Ref: Zone
+        Export:
+            Name: HaploRoutesIntegration:ZoneId
+Resources:
+    Zone:
+        DeletionPolicy: Retain
+        Type: AWS::Route53::HostedZone
+        Properties:
+            Name: integration.haplo.com.au.
+    ParentNs:
+        DeletionPolicy: Retain
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneId:
+                Fn::ImportValue: HaploRoutesProduction:ZoneId
+            RecordSets:
+                -   Name: integration.haplo.com.au.
+                    Type: NS
+                    TTL: '300'
+                    ResourceRecords:
+                        - Fn::Select:
+                              - 0
+                              - Fn::GetAtt:
+                                    - Zone
+                                    - NameServers
+                        - Fn::Select:
+                              - 1
+                              - Fn::GetAtt:
+                                    - Zone
+                                    - NameServers
+                        - Fn::Select:
+                              - 2
+                              - Fn::GetAtt:
+                                    - Zone
+                                    - NameServers
+                        - Fn::Select:
+                              - 3
+                              - Fn::GetAtt:
+                                    - Zone
+                                    - NameServers
+    GoogleMx:
+        DeletionPolicy: Retain
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneId:
+                Ref: Zone
+            RecordSets:
+                -   Name: integration.haplo.com.au.
+                    Type: MX
+                    TTL: '300'
+                    ResourceRecords:
+                        - 1 ASPMX.L.GOOGLE.COM.
+                        - 5 ALT1.ASPMX.L.GOOGLE.COM.
+                        - 5 ALT2.ASPMX.L.GOOGLE.COM.
+                        - 10 ALT3.ASPMX.L.GOOGLE.COM.
+                        - 10 ALT4.ASPMX.L.GOOGLE.COM.
+    GoogleSpf:
+        DeletionPolicy: Retain
+        Type: AWS::Route53::RecordSetGroup
+        Properties:
+            HostedZoneId:
+                Ref: Zone
+            RecordSets:
+                -   Name: integration.haplo.com.au.
+                    Type: TXT
+                    TTL: '300'
+                    ResourceRecords:
+                        - '"v=spf1 include:_spf.google.com ~all"'
